@@ -1,17 +1,10 @@
 "use client";
 
 import React from "react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 
-interface Invoice {
+export interface Invoice {
   invoiceNumber: string;
   clientName: string;
   amount: string;
@@ -23,7 +16,8 @@ interface RecentInvoicesTableProps {
   invoices: Invoice[];
 }
 
-const RecentInvoicesTable: React.FC<RecentInvoicesTableProps> = ({ invoices }) => {  // Helper function to determine badge variant based on status
+const RecentInvoicesTable: React.FC<RecentInvoicesTableProps> = ({ invoices }) => {
+  // Helper function to determine badge variant based on status
   const getBadgeVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
     switch (status) {
       case "Jatuh Tempo":
@@ -53,25 +47,20 @@ const RecentInvoicesTable: React.FC<RecentInvoicesTableProps> = ({ invoices }) =
         <TableBody>
           {invoices.length > 0 ? (
             invoices.map((invoice) => (
-              <TableRow 
-                key={invoice.invoiceNumber}
-                className="hover:bg-neutral-50 cursor-pointer"
-              >
+              <TableRow key={invoice.invoiceNumber} className="hover:bg-neutral-50 cursor-pointer">
                 <TableCell className="font-medium">{invoice.invoiceNumber}</TableCell>
                 <TableCell>{invoice.clientName}</TableCell>
                 <TableCell className="font-medium">{invoice.amount}</TableCell>
                 <TableCell>{invoice.dueDate}</TableCell>
                 <TableCell className="text-right">
-                  <Badge 
-                    variant={getBadgeVariant(invoice.status)}
-                    className="font-medium"
-                  >
+                  <Badge variant={getBadgeVariant(invoice.status)} className="font-medium">
                     {invoice.status}
                   </Badge>
                 </TableCell>
               </TableRow>
             ))
-          ) : (            <TableRow>
+          ) : (
+            <TableRow>
               <TableCell colSpan={5} className="text-center py-8 text-neutral-500">
                 Tidak ada invoice
               </TableCell>

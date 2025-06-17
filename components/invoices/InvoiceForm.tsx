@@ -2,13 +2,13 @@
 
 import React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useForm, useFieldArray } from "react-hook-form";
 import { z } from "zod";
 import { CalendarIcon, Plus, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 
 import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -33,37 +33,39 @@ const formSchema = z.object({
     .min(1, "Minimal satu item diperlukan"),
 });
 
-const InvoiceForm: React.FC = () => {
+type FormValues = z.infer<typeof formSchema>;
+
+interface InvoiceFormProps {
+  onSubmit?: (data: FormValues) => void;
+  initialData?: Partial<FormValues>;
+  isSubmitting?: boolean;
+  clients?: { id: string; name: string }[];
+}
+
+const InvoiceForm: React.FC<InvoiceFormProps> = ({ onSubmit = () => {}, initialData = {}, isSubmitting = false, clients = [] }) => {
   // Define form with validation schema
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      invoiceNumber: `INV-${format(new Date(), "yyyyMMdd")}-001`,
-      issueDate: format(new Date(), "yyyy-MM-dd"),
-      dueDate: format(new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), "yyyy-MM-dd"),
-      status: "DRAFT",
-      clientId: "",
-      notes: "",
-      items: [{ description: "", quantity: 1, unitPrice: 0 }],
+      invoiceNumber: initialData.invoiceNumber || `INV-${format(new Date(), "yyyyMMdd")}-001`,
+      issueDate: initialData.issueDate || format(new Date(), "yyyy-MM-dd"),
+      dueDate: initialData.dueDate || format(new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), "yyyy-MM-dd"),
+      status: initialData.status || "DRAFT",
+      clientId: initialData.clientId || "",
+      notes: initialData.notes || "",
+      items: initialData.items || [{ description: "", quantity: 1, unitPrice: 0 }],
     },
   });
 
-  const { fields, append, remove } = form.control._formValues.items || [];
+  const { fields, append, remove } = useFieldArray({
+    name: "items",
+    control: form.control,
+  });
 
-  // Submit handler
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    // Here you would typically save the invoice
-    console.log(values);
-    alert("Invoice saved!");
-  }
-
-  // Mock clients
-  const mockClients = [
-    { id: "1", name: "PT Sejahtera" },
-    { id: "2", name: "Yayasan Cerdas" },
-    { id: "3", name: "Sekolah Bintang Madani" },
-    { id: "4", name: "CV Maju Jaya" },
-  ];
+  // Handle submit function
+  function handleSubmit(values: FormValues) {
+    onSubmit(values);
+  } // Gunakan data klien dari props
 
   // Calculate total
   const calculateTotal = () => {
@@ -73,7 +75,7 @@ const InvoiceForm: React.FC = () => {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 animate-in fade-in duration-500">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8 animate-in fade-in duration-500">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card>
             <CardContent className="p-6">
@@ -168,7 +170,8 @@ const InvoiceForm: React.FC = () => {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {mockClients.map((client) => (
+                            {" "}
+                            {clients.map((client) => (
                               <SelectItem key={client.id} value={client.id}>
                                 {client.name}
                               </SelectItem>
@@ -190,7 +193,6 @@ const InvoiceForm: React.FC = () => {
                       <FormControl>
                         <Textarea placeholder="Masukkan catatan terkait invoice ini..." className="resize-none" {...field} />
                       </FormControl>
-                      <FormDescription>Catatan akan ditampilkan di invoice.</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -208,8 +210,8 @@ const InvoiceForm: React.FC = () => {
                 </Button>
               </div>
 
-              {fields?.map((item, index) => (
-                <div key={index} className="space-y-4 p-4 border rounded-md mb-4">
+              {fields.map((item, index) => (
+                <div key={item.id} className="space-y-4 p-4 border rounded-md mb-4">
                   <div className="flex justify-between items-center">
                     <h4 className="font-medium">Item #{index + 1}</h4>
                     {index > 0 && (
@@ -275,10 +277,12 @@ const InvoiceForm: React.FC = () => {
         </div>
 
         <div className="flex justify-end gap-3">
-          <Button variant="outline" type="button">
+          <Button variant="outline" type="button" disabled={isSubmitting}>
             Simpan Draft
           </Button>
-          <Button type="submit">Simpan & Kirim Invoice</Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Menyimpan..." : "Simpan & Kirim Invoice"}
+          </Button>
         </div>
       </form>
     </Form>
